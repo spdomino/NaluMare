@@ -91,7 +91,8 @@ SolutionOptions::SolutionOptions()
     mdotAlgAccumulation_(0.0),
     mdotAlgInflow_(0.0),
     mdotAlgOpen_(0.0),
-    quadType_("GaussLegendre")
+    quadType_("GaussLegendre"),
+    accousticallyCompressible_(false)
 {
   // nothing to do
 }
@@ -153,6 +154,9 @@ SolutionOptions::load(const YAML::Node & y_node)
     
     // quadrature type for high order
     get_if_present(y_solution_options, "high_order_quadrature_type", quadType_);
+
+    // accoustically compressible algorith
+    get_if_present(y_solution_options, "use_accoustically_compressible_algorithm", accousticallyCompressible_);
 
     // extract turbulence model; would be nice if we could parse an enum..
     std::string specifiedTurbModel;
@@ -462,12 +466,8 @@ SolutionOptions::load(const YAML::Node & y_node)
           fix_pressure["search_target_part"].as<std::vector<std::string>>();
         if (fix_pressure["search_method"]) {
           std::string searchMethodName = fix_pressure["search_method"].as<std::string>();
-          if (searchMethodName == "boost_rtree")
-            fixPressureInfo_->searchMethod_ = stk::search::BOOST_RTREE;
-          else if (searchMethodName == "stk_kdtree")
-            fixPressureInfo_->searchMethod_ = stk::search::KDTREE;
-          else
-            NaluEnv::self().naluOutputP0() << "ABL Fix Pressure: Search will use stk_kdtree"
+          if (searchMethodName != "stk_kdtree")
+            NaluEnv::self().naluOutputP0() << "ABL::search_method only supports stk_kdtree"
                                            << std::endl;
         }
       }
@@ -772,6 +772,19 @@ SolutionOptions::get_noc_usage(
   std::map<std::string, bool>::const_iterator iter
     = nocMap_.find(dofName);
   if (iter != nocMap_.end()) {
+    factor = (*iter).second;
+  }
+  return factor;
+}
+
+double
+SolutionOptions::get_turb_prandtl(
+  const std::string &dofName ) const
+{
+  double factor = turbPrDefault_;
+  std::map<std::string, double>::const_iterator iter
+    = turbPrMap_.find(dofName);
+  if (iter != turbPrMap_.end()) {
     factor = (*iter).second;
   }
   return factor;

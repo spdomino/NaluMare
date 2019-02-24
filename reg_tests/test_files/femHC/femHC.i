@@ -1,7 +1,5 @@
-Simulations:
-  - name: sim1
-    time_integrator: ti_1
-    optimizer: opt1
+Simulation:
+  name: NaluSim
 
 linear_solvers:
 
@@ -75,7 +73,7 @@ realms:
       options:
  
       - element_source_terms:
-          temperature: FEM_DIFF
+          temperature: [FEM_MASS, FEM_DIFF]
 
     output:
       output_data_base_name: femHC.e

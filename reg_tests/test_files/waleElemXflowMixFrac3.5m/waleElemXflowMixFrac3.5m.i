@@ -1,7 +1,5 @@
-Simulations:
-  - name: sim1
-    time_integrator: ti_1
-    optimizer: opt1
+Simulation:
+  name: NaluSim
 
 linear_solvers:
 
@@ -106,7 +104,6 @@ realms:
       target_name: [leftWall, rightWall]
       periodic_user_data:
         search_tolerance: 1.e-5
-        search_method: boost_rtree
 
     - symmetry_boundary_condition: bc_top
       target_name: topWall

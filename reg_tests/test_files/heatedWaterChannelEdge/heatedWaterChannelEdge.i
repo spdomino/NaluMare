@@ -1,7 +1,5 @@
-Simulations:
-  - name: sim1
-    time_integrator: ti_1
-    optimizer: opt1
+Simulation:
+  name: NaluSim
 
 linear_solvers:
 
@@ -182,7 +180,6 @@ realms:
 
       output_frequency: 5
 
-      search_method: stk_kdtree
       search_tolerance: 1.0e-3
       search_expansion_factor: 2.0
 
