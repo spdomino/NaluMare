@@ -23,21 +23,15 @@ namespace nalu{
   public:
     static MasterElement*
     get_surface_master_element(
-      const stk::topology& theTopo,
-      int dimension = 0,
-      std::string quadType = "GaussLegendre");
+      const stk::topology& theTopo);
 
     static MasterElement*
     get_volume_master_element(
-      const stk::topology& theTopo,
-      int dimension = 0,
-      std::string quadType = "GaussLegendre");
+      const stk::topology& theTopo);
 
     static MasterElement*
     get_fem_master_element(
-      const stk::topology& theTopo,
-      int dimension = 0,
-      std::string quadType = "GaussLegendre");
+      const stk::topology& theTopo);
 
     static void clear();
   private:

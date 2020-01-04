@@ -30,6 +30,10 @@ namespace stk {
 namespace sierra{
 namespace nalu{
 
+namespace MEconstants {
+  static const double realmin = std::numeric_limits<double>::min();
+}
+
 namespace Jacobian{
 enum Direction
 {
@@ -41,8 +45,6 @@ enum Direction
 
 struct ElementDescription;
 class MasterElement;
-
-
 
 class MasterElement
 {
@@ -97,6 +99,13 @@ public:
     SharedMemView<DoubleType*>&det_j) {
     throw std::runtime_error("shifted_grad_op using SharedMemView is not implemented");}
 
+  virtual void face_grad_op_fem(
+    int face_ordinal,
+    SharedMemView<DoubleType**>& coords,
+    SharedMemView<DoubleType***>& gradop,
+    SharedMemView<DoubleType*>&det_j) {
+    throw std::runtime_error("face_grad_op_fem using SharedMemView is not implemented");}
+
   virtual void determinant(
     SharedMemView<DoubleType**>&coords,
     SharedMemView<DoubleType**>&areav) {
@@ -107,6 +116,12 @@ public:
     SharedMemView<DoubleType***>&deriv,
     SharedMemView<DoubleType*>&det_j) {
     throw std::runtime_error("determinant_fem using SharedMemView is not implemented");}
+
+  virtual void normal_fem(
+    SharedMemView<DoubleType**>&coords,
+    SharedMemView<DoubleType***>&deriv,
+    SharedMemView<DoubleType**>&normal) {
+    throw std::runtime_error("normal_fem using SharedMemView is not implemented");}
 
   virtual void gij(
     SharedMemView<DoubleType**>& coords,
@@ -330,6 +345,11 @@ protected:
     const double *pointCoord,
     double *isoParCoord);
 
+  void general_shape_fcn(
+    const int numIp,
+    const double *isoParCoord,
+    double *shpfc);
+
   virtual void sidePcoords_to_elemPcoords(
     const int & side_ordinal,
     const int & npoints,
@@ -349,7 +369,6 @@ protected:
   int numQuad_;
 
   //quadrature info
-  std::vector<double> gaussAbscissae1D_;
   std::vector<double> gaussAbscissae_;
   std::vector<double> gaussAbscissaeShift_;
   std::vector<double> gaussWeight_;

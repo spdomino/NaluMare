@@ -84,7 +84,6 @@ public:
   
   void solve_and_update();
   void post_iter_work_dep();
-  void post_adapt_work();
   void extract_temperature();
   void post_converged_work();
   void initial_work();
@@ -116,7 +115,6 @@ public:
   ScalarFieldType *evisc_;
   ScalarFieldType *thermalCond_;
   ScalarFieldType *specHeat_;
-  ScalarFieldType *divQ_;
   ScalarFieldType *pOld_;
   
   AssembleNodalGradAlgorithmDriver *assembleNodalGradAlgDriver_;

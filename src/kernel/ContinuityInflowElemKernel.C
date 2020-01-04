@@ -75,7 +75,6 @@ ContinuityInflowElemKernel<BcAlgTraits>::execute(
   SharedMemView<DoubleType *>&rhs,
   ScratchViews<DoubleType>& scratchViews)
 {
-  NALU_ALIGNED DoubleType w_uBip[BcAlgTraits::nDim_];
   NALU_ALIGNED DoubleType w_rho_uBip[BcAlgTraits::nDim_];
   
   SharedMemView<DoubleType**>& vf_velocityBC = scratchViews.get_scratch_view_2D(*velocityBC_);
@@ -89,7 +88,6 @@ ContinuityInflowElemKernel<BcAlgTraits>::execute(
     
     // zero out vector quantities
     for ( int j = 0; j < BcAlgTraits::nDim_; ++j ) {
-      w_uBip[j] = 0.0;
       w_rho_uBip[j] = 0.0;
     }
     
@@ -97,7 +95,6 @@ ContinuityInflowElemKernel<BcAlgTraits>::execute(
       const DoubleType r = vf_shape_function_(ip,ic);
       const DoubleType rhoIC = vf_density(ic);
       for ( int j = 0; j < BcAlgTraits::nDim_; ++j ) {
-        w_uBip[j] += r*vf_velocityBC(ic,j);
         w_rho_uBip[j] += r*rhoIC*vf_velocityBC(ic,j);
       }
     }

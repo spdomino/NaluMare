@@ -18,7 +18,7 @@ option(ENABLE_EXTRA_WARNINGS "Add -Wextra to show even more compiler warnings" O
 message("   Trilinos_DIR = ${Trilinos_DIR}")
 set(CMAKE_PREFIX_PATH ${Trilinos_DIR} ${CMAKE_PREFIX_PATH})
 set(CMAKE_PREFIX_PATH ${Trilinos_PATH} ${CMAKE_PREFIX_PATH})
-find_package(Trilinos REQUIRED)
+find_package(Trilinos NO_MODULE NO_CMAKE_ENVIRONMENT_PATH NO_SYSTEM_ENVIRONMENT_PATH REQUIRED)
 include_directories(SYSTEM ${Trilinos_INCLUDE_DIRS})
 include_directories(SYSTEM ${Trilinos_TPL_INCLUDE_DIRS})
 
@@ -223,6 +223,7 @@ if(ENABLE_PARAVIEW_CATALYST)
        PATH
        "Path to external installation of Trilinos Catalyst IOSS plugin.")
    configure_file(cmake/naluXCatalyst.in ${nalu_ex_catalyst_name} @ONLY)
+  add_definitions("-DNALU_USES_CATALYST")
 endif()
 
 install(TARGETS ${utest_ex_name} ${nalu_ex_name} nalu
@@ -241,6 +242,7 @@ if(ENABLE_DOCUMENTATION)
 endif()
 
 if(ENABLE_TESTS)
+   message(" Enabling regression test suite")
    enable_testing()
    include(CTest)
    add_subdirectory(reg_tests)

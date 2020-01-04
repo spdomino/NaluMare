@@ -18,6 +18,7 @@ realms:
     mesh: ../../mesh/periodic3d.g
     use_edges: no 
     automatic_decomposition_type: rcb
+    activate_fem: yes
 
     equation_systems:
       name: theEqSys
@@ -58,7 +59,6 @@ realms:
       target_name: surface_1
       wall_user_data:
         temperature: 20.0
-
 
     - wall_boundary_condition: bc_right
       target_name: surface_2

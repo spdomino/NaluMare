@@ -31,7 +31,6 @@ ScalarDiffFemKernel<AlgTraits>::ScalarDiffFemKernel(
   ScalarFieldType* diffFluxCoeff,
   ElemDataRequests& dataPreReqs)
   : Kernel(),
-    bulkData_(&bulkData),
     scalarQ_(scalarQ),
     diffFluxCoeff_(diffFluxCoeff),
     shiftedGradOp_(solnOpts.get_shifted_grad_op(scalarQ_->name()))

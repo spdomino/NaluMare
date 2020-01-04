@@ -10,12 +10,6 @@
 #include <master_element/MasterElementFunctions.h>
 #include <master_element/Quad42DCVFEM.h>
 
-#include <master_element/MasterElementHO.h>
-#include <master_element/MasterElementUtils.h>
-
-#include <element_promotion/LagrangeBasis.h>
-#include <element_promotion/TensorProductQuadratureRule.h>
-#include <element_promotion/QuadratureRule.h>
 #include <AlgTraits.h>
 
 #include <NaluEnv.h>
@@ -262,6 +256,33 @@ void Quad42DSCV::shifted_grad_op(
 }
 
 //--------------------------------------------------------------------------
+//-------- grad_op ---------------------------------------------------------
+//--------------------------------------------------------------------------
+void Quad42DSCV::grad_op(
+  const int nelem,
+  const double *coords,
+  double *gradop,
+  double *deriv,
+  double *det_j,
+  double *error)
+{
+  int lerr = 0;
+
+  SIERRA_FORTRAN(quad_derivative)
+    ( &numIntPoints_, &intgLoc_[0], deriv );
+  
+  SIERRA_FORTRAN(quad_gradient_operator)
+    ( &nelem,
+      &nodesPerElement_,
+      &numIntPoints_,
+      deriv,
+      coords, gradop, det_j, error, &lerr );
+  
+  if ( lerr )
+    NaluEnv::self().naluOutput() << "sorry, negative Quad42DSCV volume.." << std::endl;
+}
+
+//--------------------------------------------------------------------------
 //-------- shape_fcn -------------------------------------------------------
 //--------------------------------------------------------------------------
 void
@@ -280,7 +301,7 @@ Quad42DSCV::shifted_shape_fcn(double *shpfc)
 }
 
 //--------------------------------------------------------------------------
-//-------- quad_shape_fcn ---------------------------------------------------
+//-------- quad_shape_fcn --------------------------------------------------
 //--------------------------------------------------------------------------
 void
 Quad42DSCV::quad_shape_fcn(
@@ -533,6 +554,9 @@ void Quad42DSCS::grad_op(
   quad_gradient_operator<Traits::numScsIp_, Traits::nodesPerElement_>(deriv, coords, gradop);
 }
 
+//--------------------------------------------------------------------------
+//-------- grad_op ---------------------------------------------------------
+//--------------------------------------------------------------------------
 void Quad42DSCS::grad_op(
   const int nelem,
   const double *coords,

@@ -7,7 +7,6 @@
 
 
 #include "EnthalpyEquationSystem.h"
-#include "ABLForcingAlgorithm.h"
 #include "AlgorithmDriver.h"
 #include "AssembleScalarFluxBCSolverAlgorithm.h"
 #include "AssembleScalarEdgeOpenSolverAlgorithm.h"
@@ -51,12 +50,10 @@
 #include "ScalarMassBackwardEulerNodeSuppAlg.h"
 #include "ScalarMassBDF2NodeSuppAlg.h"
 #include "ScalarMassElemSuppAlgDep.h"
-#include "EnthalpyABLSrcNodeSuppAlg.h"
 #include "Simulation.h"
 #include "TimeIntegrator.h"
 #include "SolverAlgorithmDriver.h"
 #include "SolutionOptions.h"
-#include "ABLForcingAlgorithm.h"
 
 // template for kernels
 #include "AlgTraits.h"
@@ -152,7 +149,6 @@ EnthalpyEquationSystem::EnthalpyEquationSystem(
     evisc_(NULL),
     thermalCond_(NULL),
     specHeat_(NULL),
-    divQ_(NULL),
     pOld_(NULL),
     assembleNodalGradAlgDriver_(new AssembleNodalGradAlgorithmDriver(realm_, "enthalpy", "dhdx")),
     diffFluxCoeffAlgDriver_(new AlgorithmDriver(realm_)),
@@ -178,7 +174,7 @@ EnthalpyEquationSystem::EnthalpyEquationSystem(
   realm_.needs_enthalpy(true);
 
   // advertise as non isothermal
-  realm_.isothermalFlow_ = false;
+  realm_.isothermal_ = false;
 
   // check for PMR coupling
   std::map<std::string, std::vector<std::string> >::iterator isrc 
@@ -324,10 +320,12 @@ EnthalpyEquationSystem::register_nodal_fields(
   evisc_ = &(meta_data.declare_field<ScalarFieldType>(stk::topology::NODE_RANK, "effective_viscosity_h"));
   stk::mesh::put_field_on_mesh(*evisc_, *part, nullptr);
 
-  // register divergence of radiative heat flux; for now this is an explicit coupling
+  // register divergence of radiative heat flux and linearization (controled by transfer)
   if ( pmrCouplingActive_ ) {
-    divQ_ = &(meta_data.declare_field<ScalarFieldType>(stk::topology::NODE_RANK, "div_radiative_heat_flux"));
-    stk::mesh::put_field_on_mesh(*divQ_, *part, nullptr);
+    ScalarFieldType *divQ = &(meta_data.declare_field<ScalarFieldType>(stk::topology::NODE_RANK, "div_radiative_heat_flux"));
+    stk::mesh::put_field_on_mesh(*divQ, *part, nullptr);
+    ScalarFieldType *divQLin = &(meta_data.declare_field<ScalarFieldType>(stk::topology::NODE_RANK, "div_radiative_heat_flux_linearization"));
+    stk::mesh::put_field_on_mesh(*divQLin, *part, nullptr);
   }
 
   // need to save off old pressure for pressure time derivative (avoid state for now)
@@ -572,13 +570,6 @@ EnthalpyEquationSystem::register_interior_algorithm(
         }
         else if (sourceName == "BoussinesqNonIso" ) {
           suppAlg = new BoussinesqNonIsoEnthalpySrcNodeSuppAlg(realm_);
-        }
-        else if (sourceName == "abl_forcing") {
-          ThrowAssertMsg(
-            ((NULL != realm_.ablForcingAlg_) &&
-             (realm_.ablForcingAlg_->temperatureForcingOn())),
-            "EnthalpyNodalSrcTerms::ERROR! ABL Forcing parameters must be initialized to use temperature source.");
-          suppAlg = new EnthalpyABLSrcNodeSuppAlg(realm_, realm_.ablForcingAlg_);
         }
         else {
           throw std::runtime_error("EnthalpyNodalSrcTerms::Error Source term is not supported: " + sourceName);
@@ -1207,18 +1198,6 @@ EnthalpyEquationSystem::post_iter_work_dep()
   // post process h and Too
   if ( NULL != assembleWallHeatTransferAlgDriver_ )
     assembleWallHeatTransferAlgDriver_->execute();
-}
-
-//--------------------------------------------------------------------------
-//-------- post_adapt_work -------------------------------------------------
-//--------------------------------------------------------------------------
-void
-EnthalpyEquationSystem::post_adapt_work()
-{
-  if ( realm_.process_adaptivity() ) {
-    NaluEnv::self().naluOutputP0() << "--EnthalpyEquationSystem::post_adapt_work()" << std::endl;
-    extract_temperature();
-  }
 }
 
 //--------------------------------------------------------------------------

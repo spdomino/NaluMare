@@ -9,7 +9,6 @@
 #define Hex27CVFEM_h
 
 #include <master_element/MasterElement.h>
-#include <master_element/MasterElementUtils.h>
 #include <master_element/MasterElementFunctions.h>
 
 #include <SimdInterface.h>
@@ -166,7 +165,6 @@ protected:
   const int numQuad_;
 
   // quadrature info
-  std::vector<double> gaussAbscissae1D_;
   std::vector<double> gaussAbscissae_;
   std::vector<double> gaussAbscissaeShift_;
   std::vector<double> gaussWeight_;

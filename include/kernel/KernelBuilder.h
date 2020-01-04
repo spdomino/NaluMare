@@ -14,8 +14,6 @@
 #include <AlgTraits.h>
 #include <kernel/KernelBuilderLog.h>
 
-#include <element_promotion/ElementDescription.h>
-
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Entity.hpp>
@@ -30,62 +28,42 @@ namespace sierra{
 namespace nalu{
   class Realm;
 
-
-  template <template <typename> class T, int order, typename... Args>
-  Kernel* build_ho_kernel(int dimension, Args&&... args)
-  {
-    // only two topologies supported, so we can flatten some of the decision making
-    if (dimension == 2) {
-      return new T<AlgTraitsQuadGL_2D<order>>(std::forward<Args>(args)...);
-    }
-    return new T<AlgTraitsHexGL<order>>(std::forward<Args>(args)...);
-  }
-
   template <template <typename> class T, typename... Args>
-  Kernel* build_fem_kernel(stk::topology topo, Args&&... args)
+  Kernel* build_fem_topo_kernel(stk::topology topo, Args&&... args)
   {
-    ThrowRequireMsg(topo == stk::topology::HEXAHEDRON_8, "FEM kernels only implemented for Hex8 topology");
-    return new T<AlgTraitsHex8>(std::forward<Args>(args)...);
+    switch(topo.value()) {
+    case stk::topology::HEX_8:
+      return new T<AlgTraitsHex8>(std::forward<Args>(args)...);
+    case stk::topology::TET_10:
+      return new T<AlgTraitsTet10>(std::forward<Args>(args)...);
+    default:
+      ThrowRequireMsg(false, "Only Hex8 and Tet10/Tri6 FEM elements currently supported");
+      return nullptr;
+    }
   }
 
   template <template <typename> class T, typename... Args>
   Kernel* build_topo_kernel(int dimension, stk::topology topo, Args&&... args)
   {
-    if (!topo.is_super_topology()) {
-      switch(topo.value()) {
-        case stk::topology::HEX_8:
-          return new T<AlgTraitsHex8>(std::forward<Args>(args)...);
-        case stk::topology::HEX_27:
-          return new T<AlgTraitsHex27>(std::forward<Args>(args)...);
-        case stk::topology::TET_4:
-          return new T<AlgTraitsTet4>(std::forward<Args>(args)...);
-        case stk::topology::PYRAMID_5:
-          return new T<AlgTraitsPyr5>(std::forward<Args>(args)...);
-        case stk::topology::WEDGE_6:
-          return new T<AlgTraitsWed6>(std::forward<Args>(args)...);
-        case stk::topology::QUAD_4_2D:
-          return new T<AlgTraitsQuad4_2D>(std::forward<Args>(args)...);
-        case stk::topology::QUAD_9_2D:
-          return new T<AlgTraitsQuad9_2D>(std::forward<Args>(args)...);
-        case stk::topology::TRI_3_2D:
-          return new T<AlgTraitsTri3_2D>(std::forward<Args>(args)...);
-        default:
-          return nullptr;
-      }
-    }
-    else {
-      int poly_order = poly_order_from_super_topology(dimension, topo);
-      switch (poly_order) {
-        case 2: return build_ho_kernel<T, 2>(dimension, std::forward<Args>(args)...);
-        case 3: return build_ho_kernel<T, 3>(dimension, std::forward<Args>(args)...);
-        case 4: return build_ho_kernel<T, 4>(dimension, std::forward<Args>(args)...);
-        case USER_POLY_ORDER: return build_ho_kernel<T, USER_POLY_ORDER>(dimension, std::forward<Args>(args)...);
-        default:
-          ThrowRequireMsg(false,
-            "Polynomial order" + std::to_string(poly_order) + "is not supported by default.  "
-            "Specify USER_POLY_ORDER and recompile to run.");
-          return nullptr;
-      }
+    switch(topo.value()) {
+    case stk::topology::HEX_8:
+      return new T<AlgTraitsHex8>(std::forward<Args>(args)...);
+    case stk::topology::HEX_27:
+      return new T<AlgTraitsHex27>(std::forward<Args>(args)...);
+    case stk::topology::TET_4:
+      return new T<AlgTraitsTet4>(std::forward<Args>(args)...);
+    case stk::topology::PYRAMID_5:
+      return new T<AlgTraitsPyr5>(std::forward<Args>(args)...);
+    case stk::topology::WEDGE_6:
+      return new T<AlgTraitsWed6>(std::forward<Args>(args)...);
+    case stk::topology::QUAD_4_2D:
+      return new T<AlgTraitsQuad4_2D>(std::forward<Args>(args)...);
+    case stk::topology::QUAD_9_2D:
+      return new T<AlgTraitsQuad9_2D>(std::forward<Args>(args)...);
+    case stk::topology::TRI_3_2D:
+      return new T<AlgTraitsTri3_2D>(std::forward<Args>(args)...);
+    default:
+      return nullptr;
     }
   }
 
@@ -140,27 +118,52 @@ namespace nalu{
   }
 
   template <template <typename> class T, typename... Args>
+  Kernel* build_fem_face_elem_topo_kernel(int dimension,
+                                          stk::topology faceTopo, stk::topology elemTopo,
+                                          Args&&... args)
+  {
+    switch(faceTopo.value()) {
+      case stk::topology::TRI_6:
+        if ( elemTopo == stk::topology::TET_10 ) {
+          return new T<AlgTraitsTri6Tet10>(std::forward<Args>(args)...);
+        }
+        else {   
+          ThrowRequireMsg(false,
+                          "Tri6 exposed face is not attached to either a tet10.");
+        }
+      default:
+        return nullptr;
+    }
+  }
+
+  template <template <typename> class T, typename... Args>
   Kernel* build_face_topo_kernel(int dimension, stk::topology topo, Args&&... args)
   {
-    if (!topo.is_super_topology()) {
-      switch(topo.value()) {
-        case stk::topology::QUAD_4:
-          return new T<AlgTraitsQuad4>(std::forward<Args>(args)...);
-        case stk::topology::QUAD_9:
-          return new T<AlgTraitsQuad9>(std::forward<Args>(args)...);
-        case stk::topology::TRI_3:
-          return new T<AlgTraitsTri3>(std::forward<Args>(args)...);
-        case stk::topology::LINE_2:
-          return new T<AlgTraitsEdge_2D>(std::forward<Args>(args)...);
-        case stk::topology::LINE_3:
-          return new T<AlgTraitsEdge3_2D>(std::forward<Args>(args)...);
-        default:
-          return nullptr;
-      }
+    switch(topo.value()) {
+    case stk::topology::QUAD_4:
+      return new T<AlgTraitsQuad4>(std::forward<Args>(args)...);
+    case stk::topology::QUAD_9:
+      return new T<AlgTraitsQuad9>(std::forward<Args>(args)...);
+    case stk::topology::TRI_3:
+      return new T<AlgTraitsTri3>(std::forward<Args>(args)...);
+    case stk::topology::LINE_2:
+      return new T<AlgTraitsEdge_2D>(std::forward<Args>(args)...);
+    case stk::topology::LINE_3:
+      return new T<AlgTraitsEdge3_2D>(std::forward<Args>(args)...);
+    default:
+      return nullptr;
     }
-    else {
-      int poly_order = poly_order_from_super_topology(dimension, topo);
-      throw std::runtime_error("PMR exposed surface bc does not support promoted element type: " + std::to_string(poly_order));
+  }
+
+  template <template <typename> class T, typename... Args>
+  Kernel* build_fem_face_topo_kernel(stk::topology topo, Args&&... args)
+  {
+    switch(topo.value()) {
+    case stk::topology::TRI_6:
+      return new T<AlgTraitsTri6>(std::forward<Args>(args)...);
+    default:
+      ThrowRequireMsg(false, "Only Tri6 FEM elements currently supported");
+      return nullptr;
     }
   }
   
@@ -209,7 +212,28 @@ namespace nalu{
   }
 
   template <template <typename> class T, typename... Args>
-  bool build_fem_kernel_if_requested(
+  bool build_fem_face_elem_topo_kernel_automatic(
+    stk::topology faceTopo,
+    stk::topology elemTopo,
+    EquationSystem& eqSys,
+    std::vector<Kernel*>& kernelVec,
+    std::string name,
+    Args&&... args)
+  {
+    // dimension, in addition to topology, is necessary to distinguish the HO elements,
+    const int dim = eqSys.realm_.spatialDimension_;
+
+    KernelBuilderLog::self().add_valid_name(eqSys.eqnTypeName_,  name);
+    Kernel* compKernel = build_fem_face_elem_topo_kernel<T>(dim, faceTopo, elemTopo,
+                                                            std::forward<Args>(args)...);
+    ThrowRequire(compKernel != nullptr);
+    KernelBuilderLog::self().add_built_name(eqSys.eqnTypeName_,  name);
+    kernelVec.push_back(compKernel);
+    return true;
+  }
+
+  template <template <typename> class T, typename... Args>
+  bool build_fem_topo_kernel_if_requested(
     stk::topology topo,
     EquationSystem& eqSys,
     std::vector<Kernel*>& kernelVec,
@@ -219,7 +243,7 @@ namespace nalu{
     bool isCreated = false;
     KernelBuilderLog::self().add_valid_name(eqSys.eqnTypeName_,  name);
     if (eqSys.supp_alg_is_requested(name)) {
-      Kernel* compKernel = build_fem_kernel<T>(topo, std::forward<Args>(args)...);
+      Kernel* compKernel = build_fem_topo_kernel<T>(topo, std::forward<Args>(args)...);
       ThrowRequire(compKernel != nullptr);
       KernelBuilderLog::self().add_built_name(eqSys.eqnTypeName_,  name);
       kernelVec.push_back(compKernel);
@@ -247,6 +271,22 @@ namespace nalu{
     return true;
   }
 
+  template <template <typename> class T, typename... Args>
+  bool build_fem_face_topo_kernel_automatic(
+    stk::topology topo,
+    EquationSystem& eqSys,
+    std::vector<Kernel*>& kernelVec,
+    std::string name,
+    Args&&... args)
+  {
+    KernelBuilderLog::self().add_valid_name(eqSys.eqnTypeName_, name);
+    Kernel* compKernel = build_fem_face_topo_kernel<T>(topo, std::forward<Args>(args)...);
+    ThrowRequire(compKernel != nullptr);
+    KernelBuilderLog::self().add_built_name(eqSys.eqnTypeName_, name);
+    kernelVec.push_back(compKernel);  
+    return true;
+  }
+
   inline std::pair<AssembleElemSolverAlgorithm*, bool>
   build_or_add_part_to_solver_alg(
     EquationSystem& eqSys,
@@ -262,6 +302,7 @@ namespace nalu{
                       topo == stk::topology::TRIANGLE_3_2D ||
                       topo == stk::topology::WEDGE_6 ||
                       topo == stk::topology::TETRAHEDRON_4 ||
+                      topo == stk::topology::TETRAHEDRON_10 ||
                       topo == stk::topology::PYRAMID_5);
 
     auto itc = solverAlgs.find(algName);
@@ -305,6 +346,7 @@ namespace nalu{
                       elemTopo == stk::topology::TRIANGLE_3_2D ||
                       elemTopo == stk::topology::WEDGE_6 ||
                       elemTopo == stk::topology::TETRAHEDRON_4 ||
+                      elemTopo == stk::topology::TETRAHEDRON_10 ||
                       elemTopo == stk::topology::PYRAMID_5);
 
     auto itc = solverAlgs.find(algName);
@@ -344,6 +386,7 @@ namespace nalu{
     bool isNotNGP = !(topo == stk::topology::QUAD_4 ||
                       topo == stk::topology::QUAD_9 ||
                       topo == stk::topology::TRI_3 ||
+                      topo == stk::topology::TRI_6 ||
                       topo == stk::topology::LINE_2 ||
                       topo == stk::topology::LINE_3 );
 

@@ -8,7 +8,6 @@
 
 #include <master_element/MasterElement.h>
 #include <master_element/MasterElementFunctions.h>
-#include <master_element/MasterElementUtils.h>
 #include <master_element/Tet4CVFEM.h>
 #include <master_element/Hex8GeometryFunctions.h>
 
@@ -233,6 +232,36 @@ void TetSCV::shifted_grad_op(
   generic_grad_op<AlgTraitsTet4>(deriv, coords, gradop);
 }
 
+//--------------------------------------------------------------------------
+//-------- grad_op ---------------------------------------------------------
+//--------------------------------------------------------------------------
+void TetSCV::grad_op(
+  const int nelem,
+  const double *coords,
+  double *gradop,
+  double *deriv,
+  double *det_j,
+  double *error)
+{
+  int lerr = 0;
+
+  SIERRA_FORTRAN(tet_derivative)
+    ( &numIntPoints_, deriv );
+  
+  SIERRA_FORTRAN(tet_gradient_operator)
+    ( &nelem,
+      &nodesPerElement_,
+      &numIntPoints_,
+      deriv,
+      coords, gradop, det_j, error, &lerr );
+
+  if ( lerr )
+    NaluEnv::self().naluOutput() << "sorry, negative TetSCV volume.." << std::endl;
+}
+
+//--------------------------------------------------------------------------
+//-------- determinant -------------------------------------------------
+//--------------------------------------------------------------------------
 void TetSCV::determinant(
   const int nelem,
   const double *coords,

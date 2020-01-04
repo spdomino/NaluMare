@@ -55,7 +55,6 @@ public:
 private:
   HeatCondMassFemKernel() = delete;
 
-  const stk::mesh::BulkData* bulkData_;
   ScalarFieldType *temperatureNp1_{nullptr};
   ScalarFieldType *temperatureN_{nullptr};
   ScalarFieldType *temperatureNm1_{nullptr};

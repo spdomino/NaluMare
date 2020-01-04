@@ -77,4 +77,4 @@ private:
 }  // nalu
 }  // sierra
 
-#endif /* MOMENTUMSYMMETRYELEMKERNEL_H */
+#endif /* ContinuityOpenElemKernel_h */

@@ -83,7 +83,7 @@ public:
 
   bool get_noc_usage(const std::string &dofName) const;
 
-  bool has_set_boussinesq_time_scale();
+  void set_consolidated_bc_solver_alg();
 
   double hybridDefault_;
   double alphaDefault_;
@@ -108,21 +108,9 @@ public:
   bool meshMotion_;
   bool meshDeformation_;
   bool externalMeshDeformation_;
-  bool activateUniformRefinement_;
-  bool uniformRefineSaveAfter_;
-  std::vector<int> refineAt_;
-  bool activateAdaptivity_;
+  bool errorIndicatorActive_;
   ErrorIndicatorType errorIndicatorType_;
-  int adaptivityFrequency_;
-  bool useMarker_;
-  double refineFraction_;
-  double unrefineFraction_;
-  double physicalErrIndCriterion_;
-  double physicalErrIndUnrefCriterionMultipler_;
-  double maxRefinementNumberOfElementsFraction_;
-  bool adapterExtraOutput_;
-  bool useAdapter_;
-  int maxRefinementLevel_;
+  int errorIndicatorFrequency_;
   bool ncAlgGaussLabatto_;
   bool ncAlgUpwindAdvection_;
   bool ncAlgIncludePstab_;
@@ -142,10 +130,7 @@ public:
   double eigenvaluePerturbDelta_;
   int eigenvaluePerturbBiasTowards_;
   double eigenvaluePerturbTurbKe_;
-  double earthAngularVelocity_;
-  double latitude_;
-  double raBoussinesqTimeScale_;
-
+ 
   // mdot post processing
   double mdotAlgAccumulation_;
   double mdotAlgInflow_;

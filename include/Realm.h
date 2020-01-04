@@ -52,10 +52,6 @@ class AuxFunctionAlgorithm;
 class ComputeGeometryAlgorithmDriver;
 // class OversetManager;
 class NonConformalManager;
-class ErrorIndicatorAlgorithmDriver;
-#if defined (NALU_USES_PERCEPT)
-class Adapter;
-#endif
 class EquationSystems;
 class OutputInfo;
 class PostProcessingInfo;
@@ -73,12 +69,6 @@ class SolutionNormPostProcessing;
 class TurbulenceAveragingPostProcessing;
 class DataProbePostProcessing;
 class Actuator;
-class ABLForcingAlgorithm;
-
-class TensorProductQuadratureRule;
-class LagrangeBasis;
-class PromotedElementIO;
-struct ElementDescription;
 
 /** Representation of a computational domain and physics equations solved on
  * this domain.
@@ -110,8 +100,6 @@ class Realm {
   std::string convert_bytes(double bytes);
 
   void create_mesh();
-
-  void setup_adaptivity();
 
   void setup_nodal_fields();
   void setup_edge_fields();
@@ -345,11 +333,9 @@ class Realm {
   std::string name();
 
   // redirection of stk::mesh::get_buckets to allow global selector
-  //  to be applied, e.g., in adaptivity we need to avoid the parent
-  //  elements
-  stk::mesh::BucketVector const& get_buckets( stk::mesh::EntityRank rank,
-                                              const stk::mesh::Selector & selector ,
-                                              bool get_all = false) const;
+  stk::mesh::BucketVector const& get_buckets( 
+    stk::mesh::EntityRank rank,
+    const stk::mesh::Selector & selector) const;
 
   // get aura, bulk and meta data
   bool get_activate_aura();
@@ -396,10 +382,7 @@ class Realm {
 
   // algorithm drivers managed by region
   ComputeGeometryAlgorithmDriver *computeGeometryAlgDriver_;
-  ErrorIndicatorAlgorithmDriver *errorIndicatorAlgDriver_;
-# if defined (NALU_USES_PERCEPT)  
-  Adapter *adapter_;
-#endif
+  AlgorithmDriver *errorIndicatorAlgDriver_;
   unsigned numInitialElements_;
   // for element, side, edge, node rank (node not used)
   stk::mesh::Selector adapterSelector_[4];
@@ -426,7 +409,6 @@ class Realm {
   TurbulenceAveragingPostProcessing *turbulenceAveragingPostProcessing_;
   DataProbePostProcessing *dataProbePostProcessing_;
   Actuator *actuator_;
-  ABLForcingAlgorithm *ablForcingAlg_;
 
   std::vector<Algorithm *> propertyAlg_;
   std::map<PropertyIdentifier, ScalarFieldType *> propertyMap_;
@@ -447,7 +429,6 @@ class Realm {
   double timerTransferSearch_;
   double timerTransferExecute_;
   double timerSkinMesh_;
-  double timerPromoteMesh_;
   double timerSortExposedFace_;
 
   NonConformalManager *nonConformalManager_;
@@ -481,8 +462,8 @@ class Realm {
   bool checkJacobians_;
   
   // types of physics
-  bool isothermalFlow_;
-  bool uniformFlow_;
+  bool isothermal_;
+  bool uniform_;
 
   // some post processing of entity counts
   bool provideEntityCount_;
@@ -534,9 +515,8 @@ class Realm {
   // empty part vector should it be required
   stk::mesh::PartVector emptyPartVector_;
 
-  // base and promote mesh parts
+  // base mesh parts
   stk::mesh::PartVector basePartVector_;
-  stk::mesh::PartVector superPartVector_;
 
   std::vector<AuxFunctionAlgorithm *> bcDataAlg_;
 
@@ -574,28 +554,15 @@ class Realm {
   double get_stefan_boltzmann();
   double get_turb_model_constant(
     const TurbulenceModelConstant turbModelEnum);
-  bool process_adaptivity();
 
-  // element promotion options
-  bool doPromotion_; // conto
-  unsigned promotionOrder_;
-  
   // id for the input mesh
   size_t inputMeshIdx_;
 
   // save off the node
   const YAML::Node & node_;
 
-  // tools
-  std::unique_ptr<ElementDescription> desc_; // holds topo info
-  std::unique_ptr<PromotedElementIO> promotionIO_; // mesh outputer
-  std::vector<std::string> superTargetNames_;
-
-  void setup_element_promotion(); // create super parts
-  void promote_mesh(); // create new super element / sides on parts
-  void create_promoted_output_mesh(); // method to create output of linear subelements
-  bool using_SGL_quadrature() const { return get_quad_type() == "SGL"; };
-  bool high_order_active() const { return doPromotion_; };
+  // flag for CVFEM usage
+  bool usesCVFEM_;
 
   std::string physics_part_name(std::string) const;
   std::vector<std::string> physics_part_names(std::vector<std::string>) const;

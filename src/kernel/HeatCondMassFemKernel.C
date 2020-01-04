@@ -33,7 +33,6 @@ HeatCondMassFemKernel<AlgTraits>::HeatCondMassFemKernel(
   ScalarFieldType* specHeat,
   ElemDataRequests& dataPreReqs)
   : Kernel(),
-    bulkData_(&bulkData),
     density_(density),
     specHeat_(specHeat)
 {
@@ -72,7 +71,6 @@ HeatCondMassFemKernel<AlgTraits>::HeatCondMassFemKernel(
   dataPreReqs.add_gathered_nodal_field(*density_, 1);
   dataPreReqs.add_gathered_nodal_field(*specHeat_, 1);
   
-  //dataPreReqs.add_master_element_call(FEM_GRAD_OP, CURRENT_COORDINATES);
   dataPreReqs.add_master_element_call(FEM_DET_J, CURRENT_COORDINATES);
 }
 

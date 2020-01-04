@@ -25,6 +25,7 @@ namespace nalu{
 
 class Realm;
 class AssembleNodalGradAlgorithmDriver;
+class AssembleWallHeatTransferAlgorithmDriver;
 class AlgorithmDriver;
 class EquationSystems;
 class ProjectedNodalGradientEquationSystem;
@@ -81,7 +82,6 @@ public:
     EquationSystem::load(node);
   }
 
-
   // allow equation system to manage a projected nodal gradient
   const bool managePNG_;
 
@@ -90,9 +90,6 @@ public:
   ScalarFieldType *tTmp_;
   ScalarFieldType *dualNodalVolume_;
   VectorFieldType *coordinates_;
-  ScalarFieldType *exact_temperature_;
-  VectorFieldType *exact_dtdx_;
-  VectorFieldType *exact_laplacian_;
   
   ScalarFieldType *density_;
   ScalarFieldType *specHeat_;
@@ -103,6 +100,8 @@ public:
   AssembleNodalGradAlgorithmDriver *assembleNodalGradAlgDriver_;
   bool isInit_;
   ProjectedNodalGradientEquationSystem *projectedNodalGradEqs_;
+  bool pmrCouplingActive_;
+  AssembleWallHeatTransferAlgorithmDriver *assembleWallHeatTransferAlgDriver_;
 };
 
 } // namespace nalu

@@ -12,10 +12,8 @@
 #include "FieldTypeDef.h"
 
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Entity.hpp>
 
 #include <Kokkos_Core.hpp>
-#include <vector>
 
 namespace sierra {
 namespace nalu {
@@ -49,7 +47,6 @@ public:
 private:
   ScalarDiffFemKernel() = delete;
 
-  const stk::mesh::BulkData* bulkData_;
   ScalarFieldType *scalarQ_{nullptr};
   ScalarFieldType *diffFluxCoeff_{nullptr};
   VectorFieldType *coordinates_{nullptr};

@@ -30,8 +30,7 @@ enum AlgorithmType{
   NON_CONFORMAL = 11,
   ELEM_SOURCE = 12,
   OVERSET = 13,
-  WALL_ABL = 14,
-
+  WALL_FCN_PROJ = 14,
   /** Set the reference pressure at a node.
    *
    *  Used only for continuity equation system. This needs to be the last

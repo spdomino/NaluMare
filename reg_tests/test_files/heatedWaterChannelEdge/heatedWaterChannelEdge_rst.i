@@ -7,7 +7,7 @@ linear_solvers:
     type: tpetra
     method: gmres
     preconditioner: sgs
-    tolerance: 1e-5
+    tolerance: 1e-6
     max_iterations: 50
     kspace: 50
     output_level: 0
@@ -16,7 +16,7 @@ linear_solvers:
     type: tpetra
     method: gmres
     preconditioner: muelu
-    tolerance: 1e-5
+    tolerance: 1e-6
     max_iterations: 50
     kspace: 50
     output_level: 0
@@ -30,7 +30,7 @@ realms:
 
     equation_systems:
       name: theEqSys
-      max_iterations: 4
+      max_iterations: 10
 
       solver_system_specification:
         velocity: solve_scalar
@@ -200,6 +200,15 @@ realms:
               number_of_points: 40
               tip_coordinates: [0.459, 6.78e-2]
               tail_coordinates: [0.371, 0.0252]
+
+          ring_specifications:
+            - name: probeRingOne
+              number_of_points: 32
+              number_of_line_points: 2
+              unit_normal: [0.0, 0.0, 1.0]
+              origin_coordinates: [0.42, 0.014269, 0.0]
+              tip_coordinates: [0.4116, 0.014269, 0.0]
+              tail_coordinates: [0.429, 0.014269, 0.0]
 
           output_variables:
             - field_name: velocity
